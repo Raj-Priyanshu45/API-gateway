@@ -1,0 +1,62 @@
+Custom rate limiter — when you write your own class
+You'd do this if you want logic beyond what RequestRateLimiter supports (e.g., your own Lua script with different semantics, per-tier limits pulled from a DB, sliding window instead of token bucket).
+Step 1 — extend AbstractGatewayFilterFactory:
+java@Component
+public class CustomRateLimiterGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<CustomRateLimiterGatewayFilterFactory.Config> {
+
+    private final ReactiveStringRedisTemplate redisTemplate;
+
+    public CustomRateLimiterGatewayFilterFactory(ReactiveStringRedisTemplate redisTemplate) {
+        super(Config.class);
+        this.redisTemplate = redisTemplate;
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            String key = "rate_limit:" + exchange.getRequest().getRemoteAddress();
+
+            return checkTokenBucket(key, config.getCapacity(), config.getRefillRate())
+                .flatMap(allowed -> {
+                    if (allowed) {
+                        return chain.filter(exchange);
+                    } else {
+                        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                        return exchange.getResponse().setComplete();
+                    }
+                });
+        };
+    }
+
+    private Mono<Boolean> checkTokenBucket(String key, int capacity, int refillRate) {
+        // your Lua script execution goes here
+        return Mono.just(true); // placeholder
+    }
+
+    public static class Config {
+        private int capacity;
+        private int refillRate;
+        // getters/setters
+    }
+}
+Step 2 — the class name convention:
+Class must be named <Something>GatewayFilterFactory. Spring strips GatewayFilterFactory off the end and that remainder is what you reference in YAML:
+yamlfilters:
+  - name: CustomRateLimiter    # matches CustomRateLimiterGatewayFilterFactory
+    args:
+      capacity: 20
+      refillRate: 10
+Step 3 — args: mapping:
+The Config inner class fields (capacity, refillRate) get bound automatically from the YAML args: map by field name — Spring uses reflection/data-binding, same mechanism as @ConfigurationProperties. No manual parsing needed.
+
+
+java// Old style (blocking) — like standing at the counter
+String value = redisTemplate.get("key");  // your thread FREEZES here until Redis replies
+System.out.println(value);
+java// Reactive style — like the buzzer
+Mono<String> value = redisTemplate.get("key");  // NOTHING has happened yet. Just a buzzer.
+
+value.subscribe(v -> System.out.println(v));
+// ONLY NOW does Redis actually get called.
+// And when it replies, THIS specific line of code (the println) runs.

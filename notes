@@ -1,0 +1,79 @@
+first step
+- in yaml set all the path predicates and routing
+eg -
+    spring:
+      cloud:
+        gateway:
+          server:
+            webflux:
+              routes:
+                - id: route1
+                  uri: https://google.com
+                  predicates:
+                    - Path=/api/first/**
+
+                - id: route2
+                  uri: https://facebook.com
+                  predicates:
+                    - Path=/api/second/**
+
+
+
+then use actuator as
+/actuator/health — is the app up (the one everyone knows)
+/actuator/metrics — request counts, JVM memory, GC pauses, custom counters you define
+/actuator/env — what config properties actually got loaded (great for "why isn't my YAML value being picked up" debugging)
+/actuator/beans — every Spring bean in the context
+/actuator/gateway/routes — Gateway-specific: literally dumps the in-memory route list Spring Cloud Gateway built from your YAML
+
+with the help of management add req things as endpoint req
+
+so actuator is used in like managing it use id
+but for actual route we have to use uri
+
+
+API throttling - number of request a user can make in a given amount of time
+
+rate limit                                  api throttling
+limit reach reject                          limit = slow
+send status 429                             slow the speed after exhaust of limit
+
+
+in filter we need to add the rate limiter if using spring rate limiter then provide argument for that under args:
+as
+
+routes:
+  - id: route1
+    uri: http://localhost:9000
+    predicates:
+      - Path=/api/first/**
+    filters:
+      - name: RequestRateLimiter
+        args:
+          redis-rate-limiter.replenishRate: 10
+          redis-rate-limiter.burstCapacity: 20
+          redis-rate-limiter.requestedTokens: 1
+          key-resolver: "#{@userKeyResolver}"
+
+args: map to fields on that filter's Config class:
+
+replenishRate — tokens added per second (steady-state allowed rate)
+burstCapacity — max bucket size (how much burst above steady rate is tolerated)
+requestedTokens — how many tokens this request consumes (usually 1, could be more for expensive endpoints)
+
+key-resolver — this is the part that decides who gets rate-limited as a unit — per-user, per-IP, per-API-key. It references a Spring bean via SpEL (#{@beanName}), which you must define yourself:
+
+
+key-resolver is used as key for rate limiter like id of device or something
+interface deciding where this request is coming from
+in webmvc we use http-request-servlet but in
+webflux :
+exchange.getRequest().getHeaders().getFirst("")
+
+and one key-resolver bean is req as it needs some key
+@Bean
+public KeyResolver userKeyResolver() {
+    return exchange -> Mono.just(
+        exchange.getRequest().getHeaders().getFirst("X-User-Id")
+    );
+}

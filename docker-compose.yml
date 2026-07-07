@@ -1,0 +1,12 @@
+services:
+  http-bin:
+    container_name: kennethreitz
+    image: kennethreitz/httpbin
+    ports:
+      - "9000:80"
+
+  redis:
+    container_name: redis-db
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

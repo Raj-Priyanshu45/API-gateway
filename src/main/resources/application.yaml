@@ -1,0 +1,43 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: route1
+              uri: http://localhost:9000
+              predicates:
+                - Path=/api/first/**
+              filters:
+                - StripPrefix=2
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+
+
+            - id: route2
+              uri: http://localhost:9000
+              predicates:
+                - Path=/api/second/**
+              filters:
+                - StripPrefix=2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health , gateway , metrics , env
+
+    access:
+      default: unrestricted
+
+  endpoint:
+    health:
+      show-details: always
