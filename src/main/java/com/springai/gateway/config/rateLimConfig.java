@@ -10,8 +10,9 @@ public class rateLimConfig {
 
     @Bean
     public KeyResolver userKeyResolver() {
-        return exchange -> Mono.just(
+        return exchange -> Mono.justOrEmpty(
                 exchange.getRequest().getHeaders().getFirst("Authorization")
         ).defaultIfEmpty("anonymous");
     }
 }
+
