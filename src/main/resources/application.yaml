@@ -16,18 +16,34 @@ spring:
                 - StripPrefix=2
                 - name: RequestRateLimiter
                   args:
-                    redis-rate-limiter.replenishRate: 20
-                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
                     redis-rate-limiter.requestedTokens: 1
                     key-resolver: "#{@userKeyResolver}"
 
+                - name: CircuitBreaker
+                  args:
+                    name: httpCircuitBreaker
+                    fallbackUri: forward:/fallback
+
 
             - id: route2
-              uri: http://localhost:9000
+              uri: http://localhost:8000/api/dna/check
               predicates:
                 - Path=/api/second/**
               filters:
                 - StripPrefix=2
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+
+                - name: CircuitBreaker
+                  args:
+                    name: httpCircuitBreaker
+                    fallbackUri: forward:/fallback
 
 management:
   endpoints:
@@ -41,3 +57,12 @@ management:
   endpoint:
     health:
       show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      httpCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
