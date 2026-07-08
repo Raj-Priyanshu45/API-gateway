@@ -1,4 +1,9 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8181/realms/master
   data:
     redis:
       host: localhost
@@ -9,11 +14,12 @@ spring:
         webflux:
           routes:
             - id: route1
-              uri: http://localhost:9000
+              uri: http://localhost:8000
               predicates:
                 - Path=/api/first/**
               filters:
                 - StripPrefix=2
+                - PrefixPath=/api/dna
                 - name: RequestRateLimiter
                   args:
                     redis-rate-limiter.replenishRate: 1
@@ -28,7 +34,7 @@ spring:
 
 
             - id: route2
-              uri: http://localhost:8000/api/dna/check
+              uri: http://localhost:9000/
               predicates:
                 - Path=/api/second/**
               filters:
@@ -66,3 +72,8 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 3
+
+  timelimiter:
+    instances:
+      httpCircuitBreaker:
+        timeout-duration: 5s

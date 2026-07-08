@@ -60,3 +60,6 @@ Mono<String> value = redisTemplate.get("key");  // NOTHING has happened yet. Jus
 value.subscribe(v -> System.out.println(v));
 // ONLY NOW does Redis actually get called.
 // And when it replies, THIS specific line of code (the println) runs.
+
+
+
