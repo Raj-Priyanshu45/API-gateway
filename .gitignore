@@ -41,5 +41,5 @@ github-sso
 notes
 cutom-rate-limiter
 customRouting
-
+actuator-endpoints
 volume-dat/mysql_keycloak_data

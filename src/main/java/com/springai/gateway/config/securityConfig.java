@@ -20,6 +20,7 @@ public class securityConfig {
         return http
                 .authorizeExchange(exchange -> {
                     exchange.pathMatchers("/actuator/**").permitAll()
+                            .pathMatchers("/api/second/**").hasRole("HEAD")
                             .pathMatchers("/api/**").hasRole("USER")
                             .anyExchange().authenticated();
                 })

@@ -51,6 +51,25 @@ spring:
                     name: httpCircuitBreaker
                     fallbackUri: forward:/fallback
 
+            - id: route3
+              uri: http://localhost:9000
+              predicates:
+                - Path=/api/admin/**
+              filters:
+                - StripPrefix=2
+                - PrefixPath=/get
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+
+                - name: CircuitBreaker
+                  args:
+                    name: httpCircuitBreaker
+                    fallbackUri: forward:/fallback
+
 management:
   endpoints:
     web:
