@@ -43,3 +43,12 @@ services:
       - "8181:8080"
     depends_on:
       - keycloak-mysql
+
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # UI
+      - "431:4317"    # OTLP gRPC receiver
+      - "4318:4318"
