@@ -1,9 +1,9 @@
 services:
-  http-bin:
-    container_name: kennethreitz
-    image: kennethreitz/httpbin
-    ports:
-      - "9000:80"
+#  http-bin:
+#    container_name: kennethreitz
+#    image: kennethreitz/httpbin
+#    ports:
+#      - "9000:80"
 
   redis:
     container_name: redis-db
